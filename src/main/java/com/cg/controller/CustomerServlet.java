@@ -40,6 +40,8 @@ public class CustomerServlet extends HttpServlet {
             case "transfer":
                 showTransferForm(request, response);
                 break;
+            case "transfer-history":
+                showTransferHistory(request, response);
             case "suspend":
 //                showSuspendForm(request, response);
                 break;
@@ -83,13 +85,15 @@ public class CustomerServlet extends HttpServlet {
 
     private void showCreateForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/create.jsp");
+
         dispatcher.forward(request, response);
     }
 
     private void createCustomer(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        RequestDispatcher dispatcher = request.getRequestDispatcher("customer/create.jsp");
+
         String message = "An error has occurred.";
         int error = 1;
-        RequestDispatcher dispatcher = request.getRequestDispatcher("customer/create.jsp");
         try {
             String fullName = request.getParameter("fullName");
             String email = request.getParameter("email");
@@ -119,14 +123,18 @@ public class CustomerServlet extends HttpServlet {
     }
 
     private void showEditForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/edit.jsp");
+
         int id = Integer.parseInt(request.getParameter("id"));
         Customer customer = customerService.selectCustomer(id);
         request.setAttribute("customer", customer);
-        RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/edit.jsp");
+
         dispatcher.forward(request, response);
     }
 
     private void editCustomer(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/edit.jsp");
+
         int error = 1;
         String message = "An error has occurred.";
 
@@ -164,21 +172,25 @@ public class CustomerServlet extends HttpServlet {
             message = "This email has been registered by other customers. Please enter a new email.";
         }
 
-        RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/edit.jsp");
+
         request.setAttribute("message", message);
         request.setAttribute("error", error);
         dispatcher.forward(request, response);
     }
 
     private void showDepositForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/deposit.jsp");
+
         int id = Integer.parseInt(request.getParameter("id"));
         Customer customer = customerService.selectCustomer(id);
         request.setAttribute("customer", customer);
-        RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/deposit.jsp");
+
         dispatcher.forward(request, response);
     }
 
     private void depositMoney(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/deposit.jsp");
+
         int error = 1;
         String message = "An error has occurred.";
 
@@ -209,22 +221,23 @@ public class CustomerServlet extends HttpServlet {
             message = "Transaction amount cannot be below 50";
         }
 
-        RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/deposit.jsp");
         request.setAttribute("error", error);
         request.setAttribute("message", message);
         dispatcher.forward(request, response);
-//        response.sendRedirect("/customers?action=deposit&id=" + id);
     }
 
     private void showWithdrawForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/withdraw.jsp");
+
         int id = Integer.parseInt(request.getParameter("id"));
         Customer customer = customerService.selectCustomer(id);
         request.setAttribute("customer", customer);
-        RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/withdraw.jsp");
+
         dispatcher.forward(request, response);
     }
 
     private void withdrawMoney(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/withdraw.jsp");
         int error = 1;
         String message = "An error has occurred.";
 
@@ -260,13 +273,14 @@ public class CustomerServlet extends HttpServlet {
             message = "Transaction amount cannot exceed current balance (" + currentBalance + ").";
         }
 
-        RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/withdraw.jsp");
         request.setAttribute("error", error);
         request.setAttribute("message", message);
         dispatcher.forward(request, response);
     }
 
     private void showTransferForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/transfer.jsp");
+
         int id = Integer.parseInt(request.getParameter("id"));
 
         Customer customer = customerService.selectCustomer(id);
@@ -278,11 +292,12 @@ public class CustomerServlet extends HttpServlet {
         request.setAttribute("fees", new Transfer() {
         }.getFees());
 
-        RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/transfer.jsp");
         dispatcher.forward(request, response);
     }
 
     private void transferMoney(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/transfer.jsp");
+
         int error = 1;
         String message = "An error has occurred";
 
@@ -335,10 +350,17 @@ public class CustomerServlet extends HttpServlet {
             message = "An error has occurred. Transaction uncompleted.";
         }
 
-        RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/transfer.jsp");
         request.setAttribute("error", error);
         request.setAttribute("message", message);
         dispatcher.forward(request, response);
     }
 
+    private void showTransferHistory(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/transfer-history.jsp");
+
+
+
+
+        dispatcher.forward(request, response);
+    }
 }
