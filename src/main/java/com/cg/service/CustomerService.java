@@ -212,6 +212,8 @@ public class CustomerService implements ICustomerService {
         try {
             Connection conn = MySQLConnectionUtils.getConnection();
             PreparedStatement ps = conn.prepareStatement(SUSPEND_CUSTOMER_SQL);
+            ps.setInt(1, id);
+
             ps.execute();
         } catch (SQLException e) {
             MySQLConnectionUtils.printSQLException(e);
