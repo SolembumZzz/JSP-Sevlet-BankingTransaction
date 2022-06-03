@@ -25,4 +25,6 @@ public interface ICustomerService {
     boolean transfer(int id, int targetId, Long transacAmt);
 
     List<Customer> selectAllRecipients(int senderId);
+
+    void suspend(int id);
 }

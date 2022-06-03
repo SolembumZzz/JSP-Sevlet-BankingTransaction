@@ -1,5 +1,11 @@
 package com.cg.service;
 
-public interface ITransferService {
+import com.cg.model.Transfer;
 
+import java.util.List;
+
+public interface ITransferService {
+    public List<Transfer> selectAllTransfers();
+
+    public long calculateTotalFees();
 }

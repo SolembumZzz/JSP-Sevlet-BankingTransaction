@@ -17,7 +17,7 @@
     <div class="table-title mb-4">
         <div class="row">
             <div class="col-sm-5">
-                <h1>Deposit money into customer's account</h1>
+                <h2>Deposit money into customer's account</h2>
             </div>
             <%@ include file="/layout/nav-list-of-customers.jsp" %>
         </div>

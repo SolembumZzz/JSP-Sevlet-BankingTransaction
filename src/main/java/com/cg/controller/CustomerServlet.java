@@ -4,7 +4,10 @@ import com.cg.model.Customer;
 import com.cg.model.Transfer;
 import com.cg.service.CustomerService;
 import com.cg.service.ICustomerService;
+import com.cg.service.ITransferService;
+import com.cg.service.TransferService;
 import com.cg.utils.MySQLConnectionUtils;
+import com.cg.utils.Validation;
 import com.cg.utils.exception.*;
 
 import javax.servlet.*;
@@ -18,6 +21,7 @@ import java.util.List;
 public class CustomerServlet extends HttpServlet {
 
     ICustomerService customerService = new CustomerService();
+    ITransferService transferService = new TransferService();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -43,7 +47,7 @@ public class CustomerServlet extends HttpServlet {
             case "transfer-history":
                 showTransferHistory(request, response);
             case "suspend":
-//                showSuspendForm(request, response);
+                showSuspendForm(request, response);
                 break;
             default:
                 listCustomers(request, response);
@@ -71,6 +75,8 @@ public class CustomerServlet extends HttpServlet {
                 break;
             case "transfer":
                 transferMoney(request, response);
+            case "suspend":
+                suspendCustomer(request, response);
             default:
                 break;
         }
@@ -188,6 +194,32 @@ public class CustomerServlet extends HttpServlet {
         dispatcher.forward(request, response);
     }
 
+
+    private void showSuspendForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/suspend.jsp");
+
+        int id = Integer.parseInt(request.getParameter("id"));
+
+        request.setAttribute("id", id);
+        dispatcher.forward(request, response);
+    }
+
+    private void suspendCustomer(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/suspend.jsp");
+
+        int error = 1;
+        String message = "An error has occurred.";
+
+        int id = Integer.parseInt(request.getParameter("id"));
+
+
+        error = 0;
+        message = "Suspend successfully!";
+        request.setAttribute("error", error);
+        request.setAttribute("message", message);
+        dispatcher.forward(request, response);
+    }
+
     private void depositMoney(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/deposit.jsp");
 
@@ -270,7 +302,7 @@ public class CustomerServlet extends HttpServlet {
         } catch (TooLowTransactionException e) {
             message = "Transaction amount cannot be below 50";
         } catch (TooHighTransactionException e) {
-            message = "Transaction amount cannot exceed current balance (" + currentBalance + ").";
+            message = "Transaction amount cannot exceed the current balance (" + currentBalance + ").";
         }
 
         request.setAttribute("error", error);
@@ -290,7 +322,7 @@ public class CustomerServlet extends HttpServlet {
         request.setAttribute("recipients", recipients);
 
         request.setAttribute("fees", new Transfer() {
-        }.getFees());
+        }.getFeeRate());
 
         dispatcher.forward(request, response);
     }
@@ -308,31 +340,36 @@ public class CustomerServlet extends HttpServlet {
         request.setAttribute("customer", sender);
         request.setAttribute("recipients", recipients);
         request.setAttribute("fees", new Transfer() {
-        }.getFees());
+        }.getFeeRate());
 
         long senderBalance = sender.getBalance();
-        long transferAmt = Long.parseLong(request.getParameter("transferAmt"));
 
         try {
             String unprocessedRepId = request.getParameter("recipientId");
-            if (unprocessedRepId.equals(""))
+            if (unprocessedRepId == null)
                 throw new EmptyInputException("Empty recipient");
             int recipientId = Integer.parseInt(unprocessedRepId);
             request.setAttribute("currentRecipient", recipientId);
 
-            String unprocessedTotal = request.getParameter("totalTransaction");
-            if (unprocessedTotal.equals(""))
-                unprocessedTotal = "0";
-            long totalTransaction = Long.parseLong(unprocessedTotal);
-            if (totalTransaction == 0)
+            String unprocessedAmt = request.getParameter("transferAmt");
+            if (unprocessedAmt == null || unprocessedAmt.equals(""))
+                unprocessedAmt = "0";
+            long transferAmt = Long.parseLong(unprocessedAmt);
+            if (transferAmt == 0)
                 throw new TooLowTransactionException("Too low amount");
+
+            String unprocessedTotal = request.getParameter("totalTransaction");
+            if (!Validation.isNumeric(unprocessedTotal))
+                throw new InvalidNumberException("Invalid number");
+            double totalTransaction = Long.parseLong(unprocessedTotal);
+
             if (totalTransaction > senderBalance)
                 throw new TooHighTransactionException("Too high amount");
 
             boolean transferred = customerService.transfer(id, recipientId, transferAmt);
-            if (!transferred) {
+            if (!transferred)
                 throw new TransactionIncompletedException("Probably rollback");
-            }
+
             sender = customerService.selectCustomer(id);
             request.setAttribute("customer", sender);
             error = 0;
@@ -342,7 +379,10 @@ public class CustomerServlet extends HttpServlet {
             message = "Recipient field cannot be empty.";
         } catch (TooLowTransactionException e) {
             error = 2;
-            message = "Transfer amount cannot be left empty.";
+            message = "Transferring amount invalid. The amount must be bigger than 0.";
+        } catch (InvalidNumberException e) {
+            error = 2;
+            message = "Invalid number";
         } catch (TooHighTransactionException e) {
             error = 2;
             message = "The total amount cannot exceed current balance (" + senderBalance + ").";
@@ -358,9 +398,11 @@ public class CustomerServlet extends HttpServlet {
     private void showTransferHistory(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/transfer-history.jsp");
 
+        List<Transfer> transferHistory = transferService.selectAllTransfers();
+        double totalFee = transferService.calculateTotalFees();
 
-
-
+        request.setAttribute("transferHistory", transferHistory);
+        request.setAttribute("totalFee", totalFee);
         dispatcher.forward(request, response);
     }
 }

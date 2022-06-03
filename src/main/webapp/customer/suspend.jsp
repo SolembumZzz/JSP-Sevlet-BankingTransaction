@@ -5,12 +5,55 @@
   Time: 10:43 AM
   To change this template use File | Settings | File Templates.
 --%>
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <html>
 <head>
-    <title>Title</title>
+    <%@ include file="/layout/head.jsp" %>
+    <title>Add customer</title>
 </head>
 <body>
+<div class="container">
+    <div class="table-title mb-4">
+        <div class="row">
+            <div class="col-sm-5">
+                <h1>Create customer</h1>
+            </div>
+            <%@ include file="/layout/nav-list-of-customers.jsp" %>
+        </div>
+    </div>
+    <form method="post" action="${pageContext.request.contextPath}/customers?action=suspend&id=${id}">
+        <fieldset class="row g-3">
+            <div class="col-md-6">
+                <label for="fullName" class="form-label">Full name</label>
+                <input class="form-control" type="text" name="fullName" id="fullName" readonly>
+            </div>
+            <div class="col-md-6">
+                <label for="email" class="form-label">Email</label>
+                <input class="form-control" type="text" name="email" id="email" readonly>
+            </div>
+            <div class="col-md-6">
+                <label for="phone" class="form-label">Phone</label>
+                <input class="form-control" type="tel" name="phone" id="phone" readonly>
+            </div>
+            <div class="col-md-6">
+                <label for="address" class="form-label">Address</label>
+                <input class="form-control" type="text" name="address" id="address" readonly>
+            </div>
+            <div>
+                <button id="btnCrtNewCus" class="btn btn-outline-primary" type="submit">
+                    <i class="fa fa-plus"></i>
+                    Suspend customer
+                </button>
+            </div>
+        </fieldset>
+    </form>
 
+    <%@ include file="/layout/alert/error.jsp" %>
+    <%@ include file="/layout/alert/warning.jsp" %>
+    <%@ include file="/layout/alert/success.jsp" %>
+</div>
+
+<%@ include file="/layout/script.jsp" %>
 </body>
 </html>

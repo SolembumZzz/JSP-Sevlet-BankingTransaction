@@ -48,7 +48,7 @@
             <div class="col-sm-6 col-lg-3">
                 <label for="recipientId" class="form-label">Recipient</label>
                 <select class="form-select" name="recipientId" id="recipientId" required>
-                    <option selected readonly value='0'>Choose recipient</option>
+                    <option selected disabled>Choose recipient</option>
                     <c:forEach var="recipient" items="${recipients}">
                         <option value="${recipient.getId()}"
                             ${(currentRecipient != null && recipient.getId() eq currentRecipient) ? 'selected' : ''}>

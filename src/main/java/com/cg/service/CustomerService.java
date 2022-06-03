@@ -26,6 +26,8 @@ public class CustomerService implements ICustomerService {
 
     private static final String TRANSFER_MONEY_SQL = "{CALL banking_transaction.sp_transfer(?,?,?,?)}";
 
+    private static final String SUSPEND_CUSTOMER_SQL = "{CALL banking_transaction.sp_suspend(?)}";
+
     @Override
     public void insertCustomer(Customer customer) {
         System.out.println(INSERT_CUSTOMER_SQL);
@@ -37,6 +39,7 @@ public class CustomerService implements ICustomerService {
             cs.setString(3, customer.getPhone());
             cs.setString(4, customer.getAddress());
             System.out.println(cs);
+
             cs.execute();
         } catch (SQLException e) {
             MySQLConnectionUtils.printSQLException(e);
@@ -202,5 +205,16 @@ public class CustomerService implements ICustomerService {
             MySQLConnectionUtils.printSQLException(e);
         }
         return customerList;
+    }
+
+    @Override
+    public void suspend(int id) {
+        try {
+            Connection conn = MySQLConnectionUtils.getConnection();
+            PreparedStatement ps = conn.prepareStatement(SUSPEND_CUSTOMER_SQL);
+            ps.execute();
+        } catch (SQLException e) {
+            MySQLConnectionUtils.printSQLException(e);
+        }
     }
 }

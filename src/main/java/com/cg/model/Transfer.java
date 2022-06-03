@@ -10,32 +10,34 @@ public class Transfer {
     boolean deleted;
     LocalDate updatedAt;
     BigInteger updatedBy;
-    int fees;
+    int feeRate;
     long feeAmount;
     long transacAmt;
     long transferAmt;
     int recipientId;
+    String recipientName;
     int senderId;
+    String senderName;
 
     public Transfer() {
-        this.fees = 10;
+        this.feeRate = 10;
     }
 
-    public Transfer(int id, LocalDate createdAt, BigInteger createdBy, boolean deleted, LocalDate updatedAt,
-                    BigInteger updatedBy, long feeAmount, long transacAmt, long transferAmt,
-                    int recipientId, int senderId) {
+    public Transfer(int id, LocalDate createdAt, BigInteger createdBy, boolean deleted, LocalDate updatedAt, BigInteger updatedBy, int feeRate, long feeAmount, long transacAmt, long transferAmt, int recipientId, String recipientName, int senderId, String senderName) {
         this.id = id;
         this.createdAt = createdAt;
         this.createdBy = createdBy;
         this.deleted = deleted;
         this.updatedAt = updatedAt;
         this.updatedBy = updatedBy;
-        this.fees = 10;
+        this.feeRate = feeRate;
         this.feeAmount = feeAmount;
         this.transacAmt = transacAmt;
         this.transferAmt = transferAmt;
         this.recipientId = recipientId;
+        this.recipientName = recipientName;
         this.senderId = senderId;
+        this.senderName = senderName;
     }
 
     public Transfer(int id, int recipientId, int senderId, long transferAmt, long transacAmt) {
@@ -44,8 +46,21 @@ public class Transfer {
         this.senderId = senderId;
         this.transacAmt = transacAmt;
         this.transferAmt = transferAmt;
-        this.fees = 10;
+        this.feeRate = 10;
     }
+
+    public Transfer(int id, int senderId, String senderName, int recipientId, String recipientName,
+                    long transfer_amount, int feeRate, long fee) {
+        this.id = id;
+        this.senderId = senderId;
+        this.senderName = senderName;
+        this.recipientId = recipientId;
+        this.recipientName = recipientName;
+        this.transferAmt = transfer_amount;
+        this.feeRate = feeRate;
+        this.feeAmount = fee;
+    }
+
 
     public int getId() {
         return id;
@@ -95,12 +110,12 @@ public class Transfer {
         this.updatedBy = updatedBy;
     }
 
-    public int getFees() {
-        return fees;
+    public int getFeeRate() {
+        return feeRate;
     }
 
-    public void setFees(int fees) {
-        this.fees = fees;
+    public void setFeeRate(int feeRate) {
+        this.feeRate = feeRate;
     }
 
     public long getFeeAmount() {
@@ -141,5 +156,21 @@ public class Transfer {
 
     public void setSenderId(int senderId) {
         this.senderId = senderId;
+    }
+
+    public String getRecipientName() {
+        return recipientName;
+    }
+
+    public void setRecipientName(String recipientName) {
+        this.recipientName = recipientName;
+    }
+
+    public String getSenderName() {
+        return senderName;
+    }
+
+    public void setSenderName(String senderName) {
+        this.senderName = senderName;
     }
 }
