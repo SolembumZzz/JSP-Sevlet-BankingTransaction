@@ -1,0 +1,45 @@
+*, ::after, ::before {
+    box-sizing: border-box;
+}
+
+.table-title {
+    background-color: #299be4;
+    color: #fff;
+    padding: 16px 30px;
+    border-radius: 3px 3px 0 0;
+}
+
+.table-title .btn {
+    float: right;
+    min-width: 50px;
+    outline: none !important;
+    margin-top: 10px;
+    margin-left: 10px;
+}
+
+.table thead {
+    background-color: #4caf50;
+    color: #fff;
+    text-align: center;
+}
+
+#CMTable tbody tr :first-child {
+    text-align: center;
+}
+
+#CMTable tbody tr :nth-child(4), #CMTable tbody tr :nth-child(6) {
+    text-align: right;
+}
+
+#HTTable tbody tr :first-child, #HTTable tbody tr :nth-child(2),
+#HTTable tbody tr :nth-child(4), #HTTable tbody tr :nth-child(7) {
+    text-align: center;
+}
+
+#HTTable tbody tr :nth-child(6), #HTTable tbody tr :nth-child(8) {
+    text-align: right;
+}
+
+.form-label {
+    font-weight: bold;
+}
