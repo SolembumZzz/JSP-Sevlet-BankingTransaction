@@ -17,7 +17,7 @@
     <div class="table-title mb-4">
         <div class="row">
             <div class="col-sm-5">
-                <h1>Update customer information</h1>
+                <h3>Update customer information</h3>
             </div>
             <%@ include file="/layout/nav-list-of-customers.jsp" %>
         </div>
@@ -27,25 +27,26 @@
             <div class="col-md-6">
                 <label for="fullName" class="form-label">Full name</label>
                 <input class="form-control" type="text" name="fullName" id="fullName"
-                       value="${customer.getFullName()}">
+                       value="${customer.getFullName()}" ${(error == 1) ? 'readonly' : ''}>
             </div>
             <div class="col-md-6">
                 <label for="email" class="form-label">Email</label>
                 <input class="form-control" type="text" name="email" id="email"
-                       value="${customer.getEmail()}">
+                       value="${customer.getEmail()}" ${(error == 1)? 'readonly' : ''}>
             </div>
             <div class="col-md-6">
                 <label for="phone" class="form-label">Phone</label>
                 <input class="form-control" type="tel" name="phone" id="phone"
-                       value="${customer.getPhone()}">
+                       value="${customer.getPhone()}" ${(error == 1) ? 'readonly' : ''}>
             </div>
             <div class="col-md-6">
                 <label for="address" class="form-label">Address</label>
                 <input class="form-control" type="text" name="address" id="address"
-                       value="${customer.getAddress()}">
+                       value="${customer.getAddress()}" ${(error == 1) ? 'readonly' : ''}>
             </div>
             <div>
-                <button id="btnSaveChanges" class="btn btn-outline-secondary" type="submit">
+                <button id="btnSaveChanges" class="btn btn-outline-secondary"
+                        type="submit"}>
                     <i class="fa-solid fa-floppy-disk"></i>
                     Save changes
                 </button>

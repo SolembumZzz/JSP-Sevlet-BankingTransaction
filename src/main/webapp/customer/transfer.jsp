@@ -17,7 +17,7 @@
     <div class="table-title mb-4">
         <div class="row">
             <div class="col-sm-5">
-                <h1>Transfer money Information</h1>
+                <h1>Transfer</h1>
             </div>
             <%@ include file="/layout/nav-list-of-customers.jsp" %>
         </div>

@@ -27,21 +27,25 @@
             <div class="row mt-3">
                 <div class="col-md-6 mb-3">
                     <label for="fullName" class="form-label">Full Name</label>
-                    <input type="text" class="form-control" name="fullName" id="fullName">
+                    <input type="text" class="form-control" name="fullName" id="fullName"
+                           value="${customer.getFullName()}">
                 </div>
                 <div class="col-md-6 mb-3">
                     <label for="email" class="form-label">Email</label>
-                    <input type="email" class="form-control" name="email" id="email">
+                    <input type="email" class="form-control" name="email" id="email"
+                           value="${customer.getEmail()}">
                 </div>
             </div>
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label for="phone" class="form-label">Phone</label>
-                    <input type="text" class="form-control" name="phone" id="phone">
+                    <input type="text" class="form-control" name="phone" id="phone"
+                           value="${customer.getPhone()}">
                 </div>
                 <div class="col-md-6 mb-3">
                     <label for="address" class="form-label">Address</label>
-                    <input type="text" class="form-control" name="address" id="address">
+                    <input type="text" class="form-control" name="address" id="address"
+                           value="${customer.getAddress()}">
                 </div>
             </div>
             <button type="submit" class="btn btn-outline-primary">

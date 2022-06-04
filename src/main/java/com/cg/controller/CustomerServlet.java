@@ -14,7 +14,9 @@ import javax.servlet.*;
 import javax.servlet.http.*;
 import javax.servlet.annotation.*;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 @WebServlet(name = "CustomerServlet", value = "/customers")
@@ -84,7 +86,9 @@ public class CustomerServlet extends HttpServlet {
 
     private void listCustomers(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/index.jsp");
+
         List<Customer> customerList = customerService.selectAllCustomers();
+
         request.setAttribute("customerList", customerList);
         dispatcher.forward(request, response);
     }
@@ -100,17 +104,37 @@ public class CustomerServlet extends HttpServlet {
 
         String message = "An error has occurred.";
         int error = 1;
+        List<String> emptyInput = new ArrayList<>();
+        Customer newCustomer = new Customer();
         try {
             String fullName = request.getParameter("fullName");
             String email = request.getParameter("email");
             String phone = request.getParameter("phone");
             String address = request.getParameter("address");
 
-            if (fullName.equals("") || email.equals("") || phone.equals("") || address.equals(""))
+            if (fullName.equals(""))
+                emptyInput.add("full name");
+            newCustomer.setFullName(fullName);
+
+            if (email.equals(""))
+                emptyInput.add("email");
+            newCustomer.setEmail(email);
+
+            if (phone.equals(""))
+                emptyInput.add("phone");
+            newCustomer.setPhone(phone);
+
+            if (address.equals(""))
+                emptyInput.add("address");
+            newCustomer.setAddress(address);
+
+            request.setAttribute("customer", newCustomer);
+            if (emptyInput.size() > 0)
                 throw new EmptyInputException("Empty input");
+
             if (customerService.checkExistingEmail(email))
                 throw new ExistingEmailException("Email existed");
-            Customer newCustomer = new Customer(fullName, email, phone, address);
+
             customerService.insertCustomer(newCustomer);
             message = "New customer has been added!";
             error = 0;
@@ -118,11 +142,13 @@ public class CustomerServlet extends HttpServlet {
             MySQLConnectionUtils.printSQLException(e);
         } catch (EmptyInputException e) {
             error = 2;
-            message = "One or more field is left empty. Please fill them up.";
+            message = "Please fill in " + ((emptyInput.size() > 1) ? "these fields: " : "this field: ") +
+                    String.join(", ", emptyInput) + ".";
         } catch (ExistingEmailException e) {
             error = 2;
             message = "Email registered. Please enter a new email.";
         }
+        request.setAttribute("customer", newCustomer);
         request.setAttribute("error", error);
         request.setAttribute("message", message);
         dispatcher.forward(request, response);
@@ -131,10 +157,30 @@ public class CustomerServlet extends HttpServlet {
     private void showEditForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/edit.jsp");
 
-        int id = Integer.parseInt(request.getParameter("id"));
-        Customer customer = customerService.selectCustomer(id);
-        request.setAttribute("customer", customer);
+        int error = -1;
+        String message = "An error has occurred.";
+        Customer customer = null;
 
+        try {
+            int id = Integer.parseInt(request.getParameter("id"));
+            customer = customerService.selectCustomer(id);
+
+            if (customer == null)
+                throw new NonExistingCustomer("Non-existing customer.");
+
+            if (customerService.isSuspended(id))
+                throw new SuspendedCustomerException("Suspended customer");
+        } catch (NonExistingCustomer e) {
+            error = 1;
+            message = "This id does not exist.";
+        } catch (SuspendedCustomerException e) {
+            error = 2;
+            message = "This customer has been suspended.";
+        }
+
+        request.setAttribute("customer", customer);
+        request.setAttribute("error", error);
+        request.setAttribute("message", message);
         dispatcher.forward(request, response);
     }
 
@@ -161,14 +207,11 @@ public class CustomerServlet extends HttpServlet {
                 throw new ExistingEmailException("Email existed");
 
             Customer newInfo = new Customer(id, fullName, email, phone, address);
-            try {
-                if (customerService.updateCustomer(newInfo)) {
-                    error = 0;
-                    message = "Updated successfully";
-                    request.setAttribute("customer", newInfo);
-                }
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
+
+            if (customerService.updateCustomer(newInfo)) {
+                error = 0;
+                message = "Updated successfully";
+                request.setAttribute("customer", newInfo);
             }
         } catch (EmptyInputException e) {
             error = 2;
@@ -176,11 +219,61 @@ public class CustomerServlet extends HttpServlet {
         } catch (ExistingEmailException e) {
             error = 2;
             message = "This email has been registered by other customers. Please enter a new email.";
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
-
 
         request.setAttribute("message", message);
         request.setAttribute("error", error);
+        dispatcher.forward(request, response);
+    }
+
+    private void showSuspendForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/suspend.jsp");
+
+        int error = -1;
+        String message = "An error has occurred.";
+        Customer customer = null;
+
+        try {
+            int id = Integer.parseInt(request.getParameter("id"));
+            customer = customerService.selectCustomer(id);
+
+            if (customer == null)
+                throw new NonExistingCustomer("Non-existing customer");
+            if (customerService.isSuspended(id))
+                throw new SuspendedCustomerException("Suspended customer");
+            request.setAttribute("customer", customer);
+        } catch (NonExistingCustomer e) {
+            error = 1;
+            message = "This id does not exist.";
+        } catch (SuspendedCustomerException e) {
+            error = 1;
+            message = "This customer has already been suspended.";
+        }
+
+        request.setAttribute("customer", customer);
+        request.setAttribute("error", error);
+        request.setAttribute("message", message);
+        dispatcher.forward(request, response);
+    }
+
+    private void suspendCustomer(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/suspend.jsp");
+
+        int error = 1;
+        String message = "An error has occurred.";
+
+        int id = Integer.parseInt(request.getParameter("id"));
+        Customer customer = customerService.selectCustomer(id);
+        request.setAttribute("customer", customer);
+
+        customerService.suspend(id);
+        error = 0;
+        message = "Suspend successfully!";
+
+        request.setAttribute("error", error);
+        request.setAttribute("message", message);
         dispatcher.forward(request, response);
     }
 
@@ -195,31 +288,6 @@ public class CustomerServlet extends HttpServlet {
     }
 
 
-    private void showSuspendForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/suspend.jsp");
-
-        int id = Integer.parseInt(request.getParameter("id"));
-
-        request.setAttribute("id", id);
-        dispatcher.forward(request, response);
-    }
-
-    private void suspendCustomer(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/suspend.jsp");
-
-        int error = 1;
-        String message = "An error has occurred.";
-
-        int id = Integer.parseInt(request.getParameter("id"));
-
-
-        error = 0;
-        message = "Suspend successfully!";
-        request.setAttribute("error", error);
-        request.setAttribute("message", message);
-        dispatcher.forward(request, response);
-    }
-
     private void depositMoney(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/deposit.jsp");
 
@@ -231,14 +299,14 @@ public class CustomerServlet extends HttpServlet {
         request.setAttribute("customer", customer);
 
         try {
-            long transacAmt;
+            BigDecimal transacAmt;
             String unprocessedAmt = request.getParameter("transacAmt");
-            if (unprocessedAmt.equals(""))
-                unprocessedAmt = "0";
-            transacAmt = Long.parseLong(unprocessedAmt);
-            if (transacAmt == 0)
+            if (!Validation.isNumeric(unprocessedAmt))
+                throw new InvalidNumberException("Invalid num");
+            transacAmt = new BigDecimal(unprocessedAmt);
+            if (transacAmt.equals(BigDecimal.ZERO))
                 throw new EmptyInputException("Empty input");
-            if (transacAmt < 50)
+            if (transacAmt.compareTo(new BigDecimal("50")) < 0)
                 throw new TooLowTransactionException("Amount too low");
             customerService.deposit(id, transacAmt);
 
@@ -246,6 +314,9 @@ public class CustomerServlet extends HttpServlet {
             request.setAttribute("customer", customer);
             error = 0;
             message = "Transaction completed!";
+        } catch (InvalidNumberException e) {
+            message = "Invalid number.";
+            error = 2;
         } catch (EmptyInputException e) {
             message = "Transaction field cannot be left empty.";
             error = 2;
@@ -276,19 +347,19 @@ public class CustomerServlet extends HttpServlet {
         int id = Integer.parseInt(request.getParameter("id"));
         Customer customer = customerService.selectCustomer(id);
         request.setAttribute("customer", customer);
-        long currentBalance = customer.getBalance();
+        BigDecimal currentBalance = customer.getBalance();
 
         try {
-            long transacAmt;
+            BigDecimal transacAmt;
             String unprocessedAmt = request.getParameter("transacAmt");
-            if (unprocessedAmt.equals(""))
-                unprocessedAmt = "0";
-            transacAmt = Long.parseLong(unprocessedAmt);
-            if (transacAmt == 0)
+            if (!Validation.isNumeric(unprocessedAmt))
+                throw new InvalidNumberException("Invalid num");
+            transacAmt = new BigDecimal(unprocessedAmt);
+            if (transacAmt.equals(BigDecimal.ZERO))
                 throw new EmptyInputException("Empty input");
-            if (transacAmt < 50)
+            if (transacAmt.compareTo(new BigDecimal("50")) < 0)
                 throw new TooLowTransactionException("Amount too low");
-            if (transacAmt > currentBalance)
+            if (transacAmt.compareTo(currentBalance) > 0)
                 throw new TooHighTransactionException("Amount too high");
             customerService.withdraw(id, transacAmt);
 
@@ -296,17 +367,20 @@ public class CustomerServlet extends HttpServlet {
             request.setAttribute("customer", customer);
             error = 0;
             message = "Transaction completed!";
+        } catch (InvalidNumberException e) {
+            message = "Invalid number.";
+            error = 2;
         } catch (EmptyInputException e) {
             message = "Transaction field cannot be left empty.";
             error = 2;
         } catch (TooLowTransactionException e) {
-            message = "Transaction amount cannot be below 50";
+            message = "Transaction amount cannot be below 50.";
         } catch (TooHighTransactionException e) {
             message = "Transaction amount cannot exceed the current balance (" + currentBalance + ").";
         }
 
-        request.setAttribute("error", error);
         request.setAttribute("message", message);
+        request.setAttribute("error", error);
         dispatcher.forward(request, response);
     }
 
@@ -339,33 +413,36 @@ public class CustomerServlet extends HttpServlet {
 
         request.setAttribute("customer", sender);
         request.setAttribute("recipients", recipients);
-        request.setAttribute("fees", new Transfer() {
-        }.getFeeRate());
+        request.setAttribute("fees", new Transfer().getFeeRate());
 
-        long senderBalance = sender.getBalance();
+        BigDecimal senderBalance = sender.getBalance();
 
         try {
+//          Validate Id
             String unprocessedRepId = request.getParameter("recipientId");
             if (unprocessedRepId == null)
                 throw new EmptyInputException("Empty recipient");
             int recipientId = Integer.parseInt(unprocessedRepId);
             request.setAttribute("currentRecipient", recipientId);
 
+//          Validate Transferring Amount
             String unprocessedAmt = request.getParameter("transferAmt");
             if (unprocessedAmt == null || unprocessedAmt.equals(""))
                 unprocessedAmt = "0";
-            long transferAmt = Long.parseLong(unprocessedAmt);
-            if (transferAmt == 0)
+            BigDecimal transferAmt = new BigDecimal(unprocessedAmt);
+            if (transferAmt.equals(BigDecimal.ZERO))
                 throw new TooLowTransactionException("Too low amount");
 
+//          Validate Total Amount
             String unprocessedTotal = request.getParameter("totalTransaction");
             if (!Validation.isNumeric(unprocessedTotal))
                 throw new InvalidNumberException("Invalid number");
-            double totalTransaction = Long.parseLong(unprocessedTotal);
+            BigDecimal totalTransaction = new BigDecimal(unprocessedTotal);
 
-            if (totalTransaction > senderBalance)
+            if (totalTransaction.compareTo(senderBalance) > 0)
                 throw new TooHighTransactionException("Too high amount");
 
+//          Transfer
             boolean transferred = customerService.transfer(id, recipientId, transferAmt);
             if (!transferred)
                 throw new TransactionIncompletedException("Probably rollback");
@@ -399,7 +476,7 @@ public class CustomerServlet extends HttpServlet {
         RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/transfer-history.jsp");
 
         List<Transfer> transferHistory = transferService.selectAllTransfers();
-        double totalFee = transferService.calculateTotalFees();
+        BigDecimal totalFee = transferService.calculateTotalFees();
 
         request.setAttribute("transferHistory", transferHistory);
         request.setAttribute("totalFee", totalFee);

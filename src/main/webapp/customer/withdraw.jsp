@@ -17,7 +17,7 @@
     <div class="table-title mb-4">
         <div class="row">
             <div class="col-sm-5">
-                <h2>Withdraw money from the customer's account</h2>
+                <h1>Withdraw</h1>
             </div>
             <%@ include file="/layout/nav-list-of-customers.jsp" %>
         </div>

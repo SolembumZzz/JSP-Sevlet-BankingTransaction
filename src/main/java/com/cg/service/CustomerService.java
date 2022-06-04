@@ -3,6 +3,7 @@ package com.cg.service;
 import com.cg.model.Customer;
 import com.cg.utils.MySQLConnectionUtils;
 
+import java.math.BigDecimal;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +28,8 @@ public class CustomerService implements ICustomerService {
     private static final String TRANSFER_MONEY_SQL = "{CALL banking_transaction.sp_transfer(?,?,?,?)}";
 
     private static final String SUSPEND_CUSTOMER_SQL = "{CALL banking_transaction.sp_suspend(?)}";
+
+    private static final String CHECK_IF_SUSPENDED_SQL = "{CALL banking_transaction.sp_check_if_suspended(?,?)}";
 
     @Override
     public void insertCustomer(Customer customer) {
@@ -61,7 +64,7 @@ public class CustomerService implements ICustomerService {
                 String email = rs.getString("email");
                 String phone = rs.getString("phone");
                 String address = rs.getString("address");
-                long balance = rs.getLong("balance");
+                BigDecimal balance = new BigDecimal(rs.getLong("balance"));
                 customer = new Customer(id, fullName, email, phone, address, balance);
             }
         } catch (SQLException e) {
@@ -84,7 +87,7 @@ public class CustomerService implements ICustomerService {
                 String email = rs.getString("email");
                 String phone = rs.getString("phone");
                 String address = rs.getString("address");
-                long balance = rs.getLong("balance");
+                BigDecimal balance = new BigDecimal(rs.getLong("balance"));
 
                 customerList.add(new Customer(id, fullName, email, phone, address, balance));
             }
@@ -139,12 +142,12 @@ public class CustomerService implements ICustomerService {
     }
 
     @Override
-    public void deposit(int id, Long transacAmt) {
+    public void deposit(int id, BigDecimal transacAmt) {
         try {
             Connection con = MySQLConnectionUtils.getConnection();
             CallableStatement cs = con.prepareCall(DEPOSIT_MONEY_SQL);
             cs.setInt(1, id);
-            cs.setLong(2, transacAmt);
+            cs.setBigDecimal(2, transacAmt);
 
             cs.execute();
         } catch (SQLException e) {
@@ -153,12 +156,12 @@ public class CustomerService implements ICustomerService {
     }
 
     @Override
-    public void withdraw(int id, Long transacAmt) {
+    public void withdraw(int id, BigDecimal transacAmt) {
         try {
             Connection con = MySQLConnectionUtils.getConnection();
             CallableStatement cs = con.prepareCall(WITHDRAW_MONEY_SQL);
             cs.setInt(1, id);
-            cs.setLong(2, transacAmt);
+            cs.setBigDecimal(2, transacAmt);
 
             cs.execute();
         } catch (SQLException e) {
@@ -167,16 +170,17 @@ public class CustomerService implements ICustomerService {
     }
 
     @Override
-    public boolean transfer(int id, int targetId, Long transacAmt) {
+    public boolean transfer(int id, int targetId, BigDecimal transacAmt) {
         boolean rowUpdated = false;
         try {
             Connection con = MySQLConnectionUtils.getConnection();
             CallableStatement cs = con.prepareCall(TRANSFER_MONEY_SQL);
             cs.setInt(1, id);
             cs.setInt(2, targetId);
-            cs.setLong(3, transacAmt);
+            cs.setBigDecimal(3, transacAmt);
 
             cs.execute();
+
             rowUpdated = cs.getBoolean(4);
         } catch (SQLException e) {
             MySQLConnectionUtils.printSQLException(e);
@@ -211,12 +215,29 @@ public class CustomerService implements ICustomerService {
     public void suspend(int id) {
         try {
             Connection conn = MySQLConnectionUtils.getConnection();
-            PreparedStatement ps = conn.prepareStatement(SUSPEND_CUSTOMER_SQL);
-            ps.setInt(1, id);
+            CallableStatement cs = conn.prepareCall(SUSPEND_CUSTOMER_SQL);
+            cs.setInt(1, id);
 
-            ps.execute();
+            cs.execute();
         } catch (SQLException e) {
             MySQLConnectionUtils.printSQLException(e);
         }
+    }
+
+    @Override
+    public boolean isSuspended(int id) {
+        boolean suspended = false;
+        try {
+            Connection conn = MySQLConnectionUtils.getConnection();
+            CallableStatement cs = conn.prepareCall(CHECK_IF_SUSPENDED_SQL);
+            cs.setInt(1, id);
+
+            cs.execute();
+
+            suspended = cs.getBoolean(2);
+        } catch (SQLException e) {
+            MySQLConnectionUtils.printSQLException(e);
+        }
+        return suspended;
     }
 }

@@ -1,5 +1,6 @@
 package com.cg.model;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
 
@@ -9,7 +10,7 @@ public class Customer {
     String email;
     String phone;
     String address;
-    long balance;
+    BigDecimal balance;
     LocalDate createdAt;
     BigInteger createdBy;
     LocalDate updatedAt;
@@ -19,7 +20,7 @@ public class Customer {
     public Customer() {}
 
     public Customer(int id, String fullName, String email, String phone, String address,
-                    long balance, LocalDate createdAt, BigInteger createdBy, LocalDate updatedAt,
+                    BigDecimal balance, LocalDate createdAt, BigInteger createdBy, LocalDate updatedAt,
                     BigInteger updatedBy, Boolean deleted) {
         this.id = id;
         this.fullName = fullName;
@@ -34,7 +35,7 @@ public class Customer {
         this.deleted = deleted;
     }
 
-    public Customer(String fullName, String email, String phone, String address, long balance) {
+    public Customer(String fullName, String email, String phone, String address, BigDecimal balance) {
         this.fullName = fullName;
         this.email = email;
         this.phone = phone;
@@ -49,7 +50,7 @@ public class Customer {
         this.address = address;
     }
 
-    public Customer(int id, String fullName, String email, String phone, String address, long balance) {
+    public Customer(int id, String fullName, String email, String phone, String address, BigDecimal balance) {
         this.id = id;
         this.fullName = fullName;
         this.email = email;
@@ -111,11 +112,11 @@ public class Customer {
         this.address = address;
     }
 
-    public long getBalance() {
+    public BigDecimal getBalance() {
         return balance;
     }
 
-    public void setBalance(long balance) {
+    public void setBalance(BigDecimal balance) {
         this.balance = balance;
     }
 
