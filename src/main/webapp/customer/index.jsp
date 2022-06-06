@@ -14,6 +14,7 @@
 </head>
 <body>
 <div class="container">
+
     <div class="table-title">
         <div class="row">
             <div class="col-sm-5">
@@ -24,7 +25,8 @@
                     <i class="far fa-plus-square"></i>
                     <span>Add new customer</span>
                 </a>
-                <a class="btn btn-outline-light" href="${pageContext.request.contextPath}/customers?action=transfer-history">
+                <a class="btn btn-outline-light"
+                   href="${pageContext.request.contextPath}/customers?action=transfer-history">
                     <i class="fa-solid fa-clock-rotate-left"></i>
                     <span>Transfer history</span>
                 </a>
@@ -87,6 +89,7 @@
         </c:forEach>
         </tbody>
     </table>
+
 </div>
 
 <%@ include file="/layout/script.jsp" %>

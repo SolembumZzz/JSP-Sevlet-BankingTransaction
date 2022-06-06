@@ -23,7 +23,7 @@
         </div>
     </div>
 
-    <form id="frmTransfer" method="post">
+    <form method="post">
         <fieldset class="row g-3">
             <div class="col-sm-6 col-lg-3">
                 <label class="form-label">Sender ID</label>

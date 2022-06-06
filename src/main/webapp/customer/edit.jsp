@@ -14,14 +14,16 @@
 </head>
 <body>
 <div class="container">
+
     <div class="table-title mb-4">
         <div class="row">
             <div class="col-sm-5">
-                <h3>Update customer information</h3>
+                <h2>Update customer information</h2>
             </div>
             <%@ include file="/layout/nav-list-of-customers.jsp" %>
         </div>
     </div>
+
     <form method="post">
         <fieldset class="row g-3">
             <div class="col-md-6">
@@ -45,19 +47,20 @@
                        value="${customer.getAddress()}" ${(error == 1) ? 'readonly' : ''}>
             </div>
             <div>
-                <button id="btnSaveChanges" class="btn btn-outline-secondary"
-                        type="submit"}>
+                <button id="btnSaveChanges" class="btn btn-outline-secondary" type="submit">
                     <i class="fa-solid fa-floppy-disk"></i>
                     Save changes
                 </button>
             </div>
         </fieldset>
     </form>
+
     <%@ include file="/layout/alert/error.jsp" %>
     <%@ include file="/layout/alert/warning.jsp" %>
     <%@ include file="/layout/alert/success.jsp" %>
 </div>
 
 <%@ include file="/layout/script.jsp" %>
+
 </body>
 </html>

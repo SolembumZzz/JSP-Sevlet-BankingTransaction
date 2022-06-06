@@ -1,6 +1,10 @@
 package com.cg.utils;
 
+import com.cg.service.CustomerService;
+import com.cg.service.ICustomerService;
+
 public class Validation {
+    static ICustomerService customerService = new CustomerService();
     public static boolean isNumeric(String strNum) {
         if (strNum == null) {
             return false;
@@ -12,5 +16,4 @@ public class Validation {
         }
         return true;
     }
-
 }

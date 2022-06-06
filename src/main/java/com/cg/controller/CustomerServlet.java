@@ -77,8 +77,10 @@ public class CustomerServlet extends HttpServlet {
                 break;
             case "transfer":
                 transferMoney(request, response);
+                break;
             case "suspend":
                 suspendCustomer(request, response);
+                break;
             default:
                 break;
         }
@@ -102,10 +104,11 @@ public class CustomerServlet extends HttpServlet {
     private void createCustomer(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         RequestDispatcher dispatcher = request.getRequestDispatcher("customer/create.jsp");
 
-        String message = "An error has occurred.";
         int error = 1;
+        String message = "An error has occurred.";
         List<String> emptyInput = new ArrayList<>();
         Customer newCustomer = new Customer();
+
         try {
             String fullName = request.getParameter("fullName");
             String email = request.getParameter("email");
@@ -157,21 +160,15 @@ public class CustomerServlet extends HttpServlet {
     private void showEditForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/edit.jsp");
 
-        int error = -1;
+        int error = 1;
         String message = "An error has occurred.";
         Customer customer = null;
 
         try {
-            int id = Integer.parseInt(request.getParameter("id"));
-            customer = customerService.selectCustomer(id);
+            customer = customerService.returnValidatedCustomer(request.getParameter("id"));
+            error = -1;
 
-            if (customer == null)
-                throw new NonExistingCustomer("Non-existing customer.");
-
-            if (customerService.isSuspended(id))
-                throw new SuspendedCustomerException("Suspended customer");
-        } catch (NonExistingCustomer e) {
-            error = 1;
+        } catch (NonExistingCustomer | NumberFormatException e) {
             message = "This id does not exist.";
         } catch (SuspendedCustomerException e) {
             error = 2;
@@ -189,38 +186,63 @@ public class CustomerServlet extends HttpServlet {
 
         int error = 1;
         String message = "An error has occurred.";
-
-        int id = Integer.parseInt(request.getParameter("id"));
-        Customer oldInfo = customerService.selectCustomer(id);
-        request.setAttribute("customer", oldInfo);
+        List<String> emptyInput = new ArrayList<>();
+        Customer customer = new Customer();
 
         try {
+            Customer oldInfo = customerService.returnValidatedCustomer(request.getParameter("id"));
+            request.setAttribute("customer", oldInfo);
+            error = -1;
+
             String fullName = request.getParameter("fullName");
             String email = request.getParameter("email");
             String phone = request.getParameter("phone");
             String address = request.getParameter("address");
 
-            if (fullName.equals("") || email.equals("") || phone.equals("") || address.equals(""))
+            if (fullName.equals(""))
+                emptyInput.add("full name");
+            customer.setFullName(fullName);
+
+            if (email.equals(""))
+                emptyInput.add("email");
+            customer.setEmail(email);
+
+            if (phone.equals(""))
+                emptyInput.add("phone");
+            customer.setPhone(phone);
+
+            if (address.equals(""))
+                emptyInput.add("address");
+            customer.setAddress(address);
+
+            request.setAttribute("customer", customer);
+
+            if (emptyInput.size() > 0)
                 throw new EmptyInputException("Empty input");
-            if (!email.equals(customerService.selectCustomer(id).getEmail())
-                    && customerService.checkExistingEmail(email))
+
+            if (!email.equals(oldInfo.getEmail()) && customerService.checkExistingEmail(email))
                 throw new ExistingEmailException("Email existed");
 
-            Customer newInfo = new Customer(id, fullName, email, phone, address);
-
-            if (customerService.updateCustomer(newInfo)) {
+            if (customerService.updateCustomer(customer)) {
                 error = 0;
                 message = "Updated successfully";
-                request.setAttribute("customer", newInfo);
+                request.setAttribute("customer", customer);
             }
+
+        } catch (NonExistingCustomer | NumberFormatException e) {
+            message = "This id does not exist.";
+        } catch (SuspendedCustomerException e) {
+            error = 2;
+            message = "This customer has been suspended.";
         } catch (EmptyInputException e) {
             error = 2;
-            message = "One or more field is left empty. Please fill them up.";
+            message = "Please fill in " + ((emptyInput.size() > 1) ? "these fields: " : "this field: ")
+                    + String.join(", ", emptyInput) + ".";
         } catch (ExistingEmailException e) {
             error = 2;
             message = "This email has been registered by other customers. Please enter a new email.";
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
 
         request.setAttribute("message", message);
@@ -231,24 +253,17 @@ public class CustomerServlet extends HttpServlet {
     private void showSuspendForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/suspend.jsp");
 
-        int error = -1;
+        int error = 1;
         String message = "An error has occurred.";
         Customer customer = null;
 
         try {
-            int id = Integer.parseInt(request.getParameter("id"));
-            customer = customerService.selectCustomer(id);
+            customer = customerService.returnValidatedCustomer(request.getParameter("id"));
+            error = -1;
 
-            if (customer == null)
-                throw new NonExistingCustomer("Non-existing customer");
-            if (customerService.isSuspended(id))
-                throw new SuspendedCustomerException("Suspended customer");
-            request.setAttribute("customer", customer);
-        } catch (NonExistingCustomer e) {
-            error = 1;
+        } catch (NonExistingCustomer | NumberFormatException e) {
             message = "This id does not exist.";
         } catch (SuspendedCustomerException e) {
-            error = 1;
             message = "This customer has already been suspended.";
         }
 
@@ -263,15 +278,24 @@ public class CustomerServlet extends HttpServlet {
 
         int error = 1;
         String message = "An error has occurred.";
+        Customer customer = null;
 
-        int id = Integer.parseInt(request.getParameter("id"));
-        Customer customer = customerService.selectCustomer(id);
+        try {
+            customer = customerService.returnValidatedCustomer(request.getParameter("id"));
+            int id = customer.getId();
+
+            customerService.suspend(id);
+            customer = null;
+            error = 0;
+            message = "Suspend successfully!";
+
+        } catch (NonExistingCustomer | NumberFormatException e) {
+            message = "This id does not exist.";
+        } catch (SuspendedCustomerException e) {
+            message = "This customer has been suspended.";
+        }
+
         request.setAttribute("customer", customer);
-
-        customerService.suspend(id);
-        error = 0;
-        message = "Suspend successfully!";
-
         request.setAttribute("error", error);
         request.setAttribute("message", message);
         dispatcher.forward(request, response);
@@ -280,10 +304,23 @@ public class CustomerServlet extends HttpServlet {
     private void showDepositForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/deposit.jsp");
 
-        int id = Integer.parseInt(request.getParameter("id"));
-        Customer customer = customerService.selectCustomer(id);
-        request.setAttribute("customer", customer);
+        int error = 1;
+        String message = "An error has occurred.";
+        Customer customer = null;
 
+        try {
+            customer = customerService.returnValidatedCustomer(request.getParameter("id"));
+            error = -1;
+
+        }catch (NonExistingCustomer | NumberFormatException e) {
+            message = "This id does not exist.";
+        } catch (SuspendedCustomerException e) {
+            message = "This customer has already been suspended.";
+        }
+
+        request.setAttribute("customer", customer);
+        request.setAttribute("error", error);
+        request.setAttribute("message", message);
         dispatcher.forward(request, response);
     }
 
@@ -293,12 +330,12 @@ public class CustomerServlet extends HttpServlet {
 
         int error = 1;
         String message = "An error has occurred.";
-
-        int id = Integer.parseInt(request.getParameter("id"));
-        Customer customer = customerService.selectCustomer(id);
-        request.setAttribute("customer", customer);
+        Customer customer = null;
 
         try {
+            customer = customerService.returnValidatedCustomer(request.getParameter("id"));
+            int id = customer.getId();
+
             BigDecimal transacAmt;
             String unprocessedAmt = request.getParameter("transacAmt");
             if (!Validation.isNumeric(unprocessedAmt))
@@ -314,6 +351,11 @@ public class CustomerServlet extends HttpServlet {
             request.setAttribute("customer", customer);
             error = 0;
             message = "Transaction completed!";
+
+        } catch (NonExistingCustomer | NumberFormatException e) {
+            message = "This id does not exist.";
+        } catch (SuspendedCustomerException e) {
+            message = "This customer has been suspended.";
         } catch (InvalidNumberException e) {
             message = "Invalid number.";
             error = 2;
@@ -324,6 +366,7 @@ public class CustomerServlet extends HttpServlet {
             message = "Transaction amount cannot be below 50";
         }
 
+        request.setAttribute("customer", customer);
         request.setAttribute("error", error);
         request.setAttribute("message", message);
         dispatcher.forward(request, response);
@@ -332,10 +375,23 @@ public class CustomerServlet extends HttpServlet {
     private void showWithdrawForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/withdraw.jsp");
 
-        int id = Integer.parseInt(request.getParameter("id"));
-        Customer customer = customerService.selectCustomer(id);
-        request.setAttribute("customer", customer);
+        int error = 1;
+        String message = "An error has occurred.";
+        Customer customer = null;
 
+        try {
+            customer = customerService.returnValidatedCustomer(request.getParameter("id"));
+            error = -1;
+
+        } catch (NonExistingCustomer | NumberFormatException e) {
+            message = "This id does not exist.";
+        } catch (SuspendedCustomerException e) {
+            message = "This customer has been suspended.";
+        }
+
+        request.setAttribute("customer", customer);
+        request.setAttribute("error", error);
+        request.setAttribute("message", message);
         dispatcher.forward(request, response);
     }
 
@@ -343,13 +399,14 @@ public class CustomerServlet extends HttpServlet {
         RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/withdraw.jsp");
         int error = 1;
         String message = "An error has occurred.";
-
-        int id = Integer.parseInt(request.getParameter("id"));
-        Customer customer = customerService.selectCustomer(id);
-        request.setAttribute("customer", customer);
-        BigDecimal currentBalance = customer.getBalance();
+        Customer customer = null;
 
         try {
+            customer = customerService.returnValidatedCustomer(request.getParameter("id"));
+            int id = customer.getId();
+            request.setAttribute("customer", customer);
+            BigDecimal currentBalance = customer.getBalance();
+
             BigDecimal transacAmt;
             String unprocessedAmt = request.getParameter("transacAmt");
             if (!Validation.isNumeric(unprocessedAmt))
@@ -367,6 +424,11 @@ public class CustomerServlet extends HttpServlet {
             request.setAttribute("customer", customer);
             error = 0;
             message = "Transaction completed!";
+
+        } catch (NonExistingCustomer | NumberFormatException e) {
+            message = "This id does not exist.";
+        } catch (SuspendedCustomerException e) {
+            message = "This customer has been suspended.";
         } catch (InvalidNumberException e) {
             message = "Invalid number.";
             error = 2;
@@ -375,8 +437,10 @@ public class CustomerServlet extends HttpServlet {
             error = 2;
         } catch (TooLowTransactionException e) {
             message = "Transaction amount cannot be below 50.";
+            error = 2;
         } catch (TooHighTransactionException e) {
-            message = "Transaction amount cannot exceed the current balance (" + currentBalance + ").";
+            message = "Transaction amount cannot exceed the current balance.";
+            error = 2;
         }
 
         request.setAttribute("message", message);
@@ -387,17 +451,30 @@ public class CustomerServlet extends HttpServlet {
     private void showTransferForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         RequestDispatcher dispatcher = request.getRequestDispatcher("/customer/transfer.jsp");
 
-        int id = Integer.parseInt(request.getParameter("id"));
+        int error = 1;
+        String message = "An error has occurred.";
+        Customer customer = null;
 
-        Customer customer = customerService.selectCustomer(id);
+        try {
+            customer = customerService.returnValidatedCustomer(request.getParameter("id"));
+            error = -1;
+            int id = customer.getId();
+            request.setAttribute("customer", customer);
+
+            List<Customer> recipients = customerService.selectAllRecipients(id);
+            request.setAttribute("recipients", recipients);
+
+            request.setAttribute("fees", new Transfer().getFeeRate());
+
+        } catch (NonExistingCustomer | NumberFormatException e) {
+            message = "This id does not exist.";
+        } catch (SuspendedCustomerException e) {
+            message = "This customer has been suspended.";
+        }
+
         request.setAttribute("customer", customer);
-
-        List<Customer> recipients = customerService.selectAllRecipients(id);
-        request.setAttribute("recipients", recipients);
-
-        request.setAttribute("fees", new Transfer() {
-        }.getFeeRate());
-
+        request.setAttribute("error", error);
+        request.setAttribute("message", message);
         dispatcher.forward(request, response);
     }
 
@@ -406,32 +483,33 @@ public class CustomerServlet extends HttpServlet {
 
         int error = 1;
         String message = "An error has occurred";
-
-        int id = Integer.parseInt(request.getParameter("id"));
-        Customer sender = customerService.selectCustomer(id);
-        List<Customer> recipients = customerService.selectAllRecipients(id);
-
-        request.setAttribute("customer", sender);
-        request.setAttribute("recipients", recipients);
+        Customer sender = null;
         request.setAttribute("fees", new Transfer().getFeeRate());
 
-        BigDecimal senderBalance = sender.getBalance();
-
         try {
+            sender = customerService.returnValidatedCustomer(request.getParameter("id"));
+            int senderId = sender.getId();
+            List<Customer> recipients = customerService.selectAllRecipients(senderId);
+
+            request.setAttribute("customer", sender);
+            request.setAttribute("recipients", recipients);
+
+            BigDecimal senderBalance = sender.getBalance();
+
 //          Validate Id
-            String unprocessedRepId = request.getParameter("recipientId");
-            if (unprocessedRepId == null)
+            String rawRepId = request.getParameter("recipientId");
+            if (rawRepId == null)
                 throw new EmptyInputException("Empty recipient");
-            int recipientId = Integer.parseInt(unprocessedRepId);
+            int recipientId = Integer.parseInt(rawRepId);
             request.setAttribute("currentRecipient", recipientId);
 
 //          Validate Transferring Amount
             String unprocessedAmt = request.getParameter("transferAmt");
-            if (unprocessedAmt == null || unprocessedAmt.equals(""))
-                unprocessedAmt = "0";
+            if (!Validation.isNumeric(unprocessedAmt))
+                throw new InvalidNumberException("Invalid num");
             BigDecimal transferAmt = new BigDecimal(unprocessedAmt);
             if (transferAmt.equals(BigDecimal.ZERO))
-                throw new TooLowTransactionException("Too low amount");
+                throw new TooLowTransactionException("Empty input");
 
 //          Validate Total Amount
             String unprocessedTotal = request.getParameter("totalTransaction");
@@ -443,14 +521,18 @@ public class CustomerServlet extends HttpServlet {
                 throw new TooHighTransactionException("Too high amount");
 
 //          Transfer
-            boolean transferred = customerService.transfer(id, recipientId, transferAmt);
+            boolean transferred = customerService.transfer(senderId, recipientId, transferAmt);
             if (!transferred)
                 throw new TransactionIncompletedException("Probably rollback");
-
-            sender = customerService.selectCustomer(id);
-            request.setAttribute("customer", sender);
             error = 0;
             message = "Transaction completed!";
+            sender = customerService.selectCustomer(senderId);
+            request.setAttribute("customer", sender);
+
+        } catch (NonExistingCustomer | NumberFormatException e) {
+            message = "This id does not exist.";
+        } catch (SuspendedCustomerException e) {
+            message = "This customer has been suspended.";
         } catch (EmptyInputException e) {
             error = 2;
             message = "Recipient field cannot be empty.";
@@ -462,7 +544,7 @@ public class CustomerServlet extends HttpServlet {
             message = "Invalid number";
         } catch (TooHighTransactionException e) {
             error = 2;
-            message = "The total amount cannot exceed current balance (" + senderBalance + ").";
+            message = "The total amount cannot exceed current balance.";
         } catch (TransactionIncompletedException e) {
             message = "An error has occurred. Transaction uncompleted.";
         }

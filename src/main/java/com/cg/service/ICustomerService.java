@@ -1,6 +1,8 @@
 package com.cg.service;
 
 import com.cg.model.Customer;
+import com.cg.utils.exception.NonExistingCustomer;
+import com.cg.utils.exception.SuspendedCustomerException;
 
 import java.math.BigDecimal;
 import java.sql.SQLException;
@@ -30,4 +32,6 @@ public interface ICustomerService {
     void suspend(int id);
 
     boolean isSuspended(int id);
+
+    Customer returnValidatedCustomer(String strId) throws NumberFormatException, NonExistingCustomer, SuspendedCustomerException;
 }

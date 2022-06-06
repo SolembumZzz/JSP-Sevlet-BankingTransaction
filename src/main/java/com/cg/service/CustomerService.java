@@ -2,6 +2,8 @@ package com.cg.service;
 
 import com.cg.model.Customer;
 import com.cg.utils.MySQLConnectionUtils;
+import com.cg.utils.exception.NonExistingCustomer;
+import com.cg.utils.exception.SuspendedCustomerException;
 
 import java.math.BigDecimal;
 import java.sql.*;
@@ -239,5 +241,16 @@ public class CustomerService implements ICustomerService {
             MySQLConnectionUtils.printSQLException(e);
         }
         return suspended;
+    }
+
+    @Override
+    public Customer returnValidatedCustomer(String strId) throws NumberFormatException, NonExistingCustomer, SuspendedCustomerException {
+        int id = Integer.parseInt(strId);
+        Customer customer = selectCustomer(id);
+        if (customer == null)
+            throw new NonExistingCustomer("Non-existing customer");
+        if (isSuspended(id))
+            throw new SuspendedCustomerException("Customer suspended");
+        return customer;
     }
 }
